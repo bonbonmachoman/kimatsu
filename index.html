@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <!-- ★★★ iPad最適化①：誤操作による拡大・縮小を禁止 ★★★ -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>期末試験・最終チェック</title>
+
+  <!-- ★★★ iPad最適化②：SafariのUIを消すための呪文 ★★★ -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="最終チェック">
+
+  <style>
+    /* --- 超・最小限CSS【iPad最適化版】 --- */
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Hiragino Kaku Gothic ProN", "メイリオ", Meiryo, sans-serif;
+      background-color: #E6F2F7;
+      margin: 0;
+      padding: 1rem;
+      color: #333;
+      -webkit-user-select: none;
+      user-select: none;
+      font-size: 1.125rem;
+    }
+    .container {
+      max-width: 768px;
+      margin: 0 auto;
+    }
+    .screen { display: none; }
+    .button {
+      display: block;
+      width: 90%;
+      max-width: 500px;
+      margin: 1.5rem auto;
+      padding: 1.75rem;
+      border-radius: 16px;
+      background-color: #4CAF50;
+      color: white;
+      text-align: center;
+      font-size: 1.75rem;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .button { border: none; -webkit-appearance: none; appearance: none; -webkit-tap-highlight-color: transparent; }
+    .question-box {
+      background-color: white;
+      padding: 2rem;
+      margin: 1.5rem 0;
+      border-radius: 16px;
+      font-size: 1.5rem;
+      line-height: 1.7;
+    }
+    .option-button {
+      display: block;
+      width: 100%;
+      margin-top: 1.25rem;
+      padding: 1.25rem;
+      border: 2px solid #ddd;
+      border-radius: 16px;
+      background-color: white;
+      font-size: 1.25rem;
+      cursor: pointer;
+      text-align: left;
+    }
+    .correct { background-color: #C8E6C9; border-color: #4CAF50; font-weight: bold; }
+    .incorrect { background-color: #FFCDD2; border-color: #F44336; }
+    .explanation {
+      background-color: #FFF9C4;
+      padding: 1.25rem;
+      margin-top: 1.5rem;
+      border-radius: 12px;
+      border-left: 6px solid #FFEB3B;
+      font-size: 1.1rem;
+    }
+    .self-eval-container {
+        display: flex;
+        justify-content: space-around;
+        margin-top: 1.5rem;
+    }
+    .self-eval-button {
+      display: inline-block;
+      width: 48%;
+      padding: 1.25rem;
+      border-radius: 12px;
+      text-align: center;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 1.25rem;
+    }
+    .perfect-btn { background-color: #2196F3; color: white; }
+    .review-btn { background-color: #FF9800; color: white; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+
+    <!-- ===== HOME画面 ===== -->
+    <div id="home-screen" class="screen" style="display:block;">
+      <h1 style="text-align: center; font-size: 2.5rem;">期末試験・最終チェック</h1>
+      <button class="button" type="button" data-subject="english">英語</button>
+      <button class="button" type="button" data-subject="kokugo">国語</button>
+      <button class="button" type="button" data-subject="shakai">社会</button>
+      <button class="button" type="button" data-subject="rika">理科</button>
+    </div>
+
+    <!-- ===== 問題画面 ===== -->
+    <div id="quiz-screen" class="screen">
+      <h2 id="quiz-title" style="text-align: center; font-size: 2rem;"></h2>
+      <div id="progress-text" style="text-align: center; color: #555; font-size: 1.2rem;"></div>
+      <div id="question-box" class="question-box">
+        <div id="question-text"></div>
+        <div id="options-container"></div>
+        <div id="explanation-box" class="explanation" style="display:none;"></div>
+      </div>
+      <div id="self-eval-container" class="self-eval-container"></div>
+    </div>
+
+  </div>
+
+  <script>
+    // ===== HOMEボタンのクリック/タッチを確実に拾うバインド =====
+    function bindHomeButtons() {
+      const home = document.getElementById('home-screen');
+      if (!home) return;
+      const handler = (subj) => (e) => { e.preventDefault(); startQuiz(subj); };
+      home.querySelectorAll('.button[data-subject]').forEach(btn => {
+        const subj = btn.dataset.subject;
+        // 多重登録を避けるため一度だけ
+        if (!btn.__bound) {
+          btn.addEventListener('click', handler(subj), { passive: false });
+          btn.addEventListener('touchend', handler(subj), { passive: false });
+          btn.__bound = true;
+        }
+      });
+    }
+
+    // ===== 1. 問題データ本体（教科ごとに分割し、安全装置を追加） =====
+
+    // --- 英語の問題データ ---
+    const Q_ENGLISH = [
+      { "id": "eng_s01", "type": "choice", "question": "「ずっと〜の状態です」という意味を表す、現在完了形（継続）の基本的な形はどれ？", "options": { "a": "主語 + have + 動詞の-ing形", "b": "主語 + have + been ~", "c": "主語 + be動詞 + 過去分詞" }, "answer": "b", "explanation": "【虎の巻】現在完了形（継続）: 主語 + have / has + been ~" },
+      { "id": "eng_s02", "type": "choice", "question": "次の文の( )に、for か since のどちらかが入るよ。\n\nI have been a volunteer ( ) 2000.", "options": { "a": "for", "b": "since" }, "answer": "b", "explanation": "【虎の巻】since + 時点 (2000年という過去の時点) がルールだよ。" },
+      { "id": "eng_s03", "type": "choice", "question": "「レストランを経営しているおじさん」という意味になるのはどれかな？", "options": { "a": "an uncle which runs a restaurant", "b": "an uncle who runs a restaurant", "c": "an uncle runs a restaurant" }, "answer": "b", "explanation": "【虎の巻】関係代名詞（人）: 名詞（人）+ who + 動詞。人が相手だから who を使うよ。" },
+      { "id": "eng_s04_who_variation1", "type": "choice", "question": "「数学が得意な人」という意味になるのはどれ？ (エイゴラボ Room46より)", "options": { "a": "a person who good at math", "b": "a person who is good at math", "c": "a person is good at math" }, "answer": "b", "explanation": "【虎の巻】関係代名詞（人）: who の後ろには、be動詞(is)もちゃんと必要だよ！" },
+      { "id": "eng_s05_who_variation2", "type": "choice", "question": "「決してあきらめない人々」という意味になるのはどれ？ (エイゴラボ Room46より)", "options": { "a": "people who never gives up", "b": "people who never give up", "c": "people never give up" }, "answer": "b", "explanation": "【虎の巻】関係代名詞（人）: 先行詞(people)が複数形だから、動詞(give)に s は付かないのがルール！" },
+      { "id": "eng_s06_which_variation1", "type": "choice", "question": "「幸せな結末の映画」という意味になるのはどれ？ (エイゴラボ Room47より)", "options": { "a": "a movie which has a happy ending", "b": "a movie which have a happy ending", "c": "a movie has a happy ending" }, "answer": "a", "explanation": "【虎の巻】関係代名詞（モノ）: 先行詞(a movie)が単数形だから、動詞は has になるよ！" },
+      { "id": "eng_a01", "type": "choice", "question": "「私にこれの使い方を見せて」と、やり方を見せてほしい時に使うのはどっち？", "options": { "a": "tell me how to use this", "b": "show me how to use this", "c": "ask me how to use this" }, "answer": "b", "explanation": "【虎の巻】間接疑問文: show は「見せる」、tell は「言う」。やり方だから show がピッタリ！" },
+      { "id": "eng_a02", "type": "choice", "question": "「爆弾が落とされた」と、〜された、という意味を表す受動態の文はどれ？", "options": { "a": "The bomb dropped.", "b": "The bomb was dropped.", "c": "The bomb is dropped." }, "answer": "b", "explanation": "【虎の巻】受動態（過去形）: 主語 + was / were + 過去分詞。過去の話だから was を使うよ。" },
+      { "id": "eng_a03", "type": "choice", "question": "「その知らせは私を悲しくさせた」と、AをBの状態に「させた」という意味になるのは？", "options": { "a": "The news was sad for me.", "b": "I was sad by the news.", "c": "The news made me sad." }, "answer": "c", "explanation": "【虎の巻】使役動詞 make: make + 人/モノ + 形容詞 の形だよ。" },
+      { "id": "eng_a04_what_to_variation1", "type": "choice", "question": "「何を飲むべきか決められない」という意味になるのはどれ？ (エイゴラボ Room35より)", "options": { "a": "I can't decide what drink.", "b": "I can't decide what to drink.", "c": "I can't decide to what drink." }, "answer": "b", "explanation": "【虎の巻】間接疑問文: what to + 動詞の原形 の形が基本だよ。" },
+      { "id": "eng_sort01", "type": "sort", "question": "日本語に合うように、下のボタンを並べ替えてみよう！\n\n「私には、広島に住んでいるおじがいます」", "options": ["lives", "an", "who", "in", "I", "uncle", "have", "Hiroshima."], "answer": ["I", "have", "an", "uncle", "who", "lives", "in", "Hiroshima."], "explanation": "【虎の巻】関係代名詞（人）: I have an uncle + He lives in Hiroshima. を who で繋げるよ！" },
+      { "id": "eng_sort02_extra", "type": "sort_extra", "question": "日本語に合うように並べ替えよう！ただし、不要な語が1つあるよ。\n\n「これは広島へ行くそのバスです」", "options": ["the", "is", "a", "goes", "that", "bus", "this", "to", "Hiroshima."], "answer": ["This", "is", "the", "bus", "that", "goes", "to", "Hiroshima."], "extraWord": "a", "explanation": "「そのバス」と特定しているので the を使う。a は不要だよ。" },
+      { "id": "eng_vocab_s01", "type": "choice", "question": "「平和」を意味する英単語はどれ？", "options": { "a": "peace", "b": "piece", "c": "pork" }, "answer": "a", "explanation": "【S級単語】peace = 平和。pieceは「かけら」だから間違えないように！" },
+      { "id": "eng_vocab_s02", "type": "choice", "question": "「ボランティア」を意味する英単語はどれ？", "options": { "a": "borantia", "b": "volunteer", "c": "barrier" }, "answer": "b", "explanation": "【S級単語】volunteer = ボランティア。スペルも書けるようにしておこう！" },
+      { "id": "eng_vocab_s03", "type": "choice", "question": "「装置」や「機器」を意味する英単語はどれ？", "options": { "a": "drive", "b": "divide", "c": "device" }, "answer": "c", "explanation": "【S級単語】device = 装置。AI device (AI装置) のように使われるよ。" },
+      { "id": "eng_vocab_s04", "type": "choice", "question": "「〜を翻訳する」という意味の動詞はどれ？", "options": { "a": "transport", "b": "translate", "c": "transfer" }, "answer": "b", "explanation": "【S級単語】translate = 〜を翻訳する。translation software (翻訳ソフト)で覚えよう。" },
+      { "id": "eng_vocab_a01", "type": "choice", "question": "「政府」を意味する英単語はどれ？", "options": { "a": "government", "b": "goverment", "c": "govermentt" }, "answer": "a", "explanation": "【A級単語】government = 政府。n を忘れないように、スペルが超重要！" },
+      { "id": "eng_vocab_a02", "type": "choice", "question": "「難民」を意味する英単語はどれ？", "options": { "a": "refuge", "b": "refuse", "c": "refugee" }, "answer": "c", "explanation": "【A級単語】refugee = 難民。杉原千畝の物語で出てきたね。" },
+      { "id": "eng_vocab_a03", "type": "choice", "question": "「便利な」という意味の形容詞はどれ？", "options": { "a": "convinient", "b": "konbini", "c": "convenient" }, "answer": "c", "explanation": "【A級単語】convenient = 便利な。これもスペルが難しいから要注意！" },
+      { "id": "eng_vocab_a04", "type": "choice", "question": "熟語「pass ( )」で、「〜を伝える」という意味になるのは？", "options": { "a": "in", "b": "on", "c": "out" }, "answer": "b", "explanation": "【A級熟語】pass on = 〜を伝える。pass out は「気絶する」だから全然違う意味だよ。" },
+      { "id": "eng_vocab_a05", "type": "choice", "question": "熟語「take ( )」で、「行動を起こす」という意味になるのは？", "options": { "a": "action", "b": "act", "c": "actor" }, "answer": "a", "explanation": "【A級熟語】take action = 行動を起こす。これはセットで覚えよう！" }
+    ];
+
+    // --- 国語の問題データ ---
+    const Q_KOKUGO = [
+      { id: "koku_01", type: "choice", question: "「明鏡止水」の読み方は？", options: { a: "めいきょうしすい", b: "みょうきょうしすい" }, answer: "a", explanation: "基本的な四字熟語です。" }
+    ];
+
+    // --- 社会の問題データ ---
+    const Q_SHAKAI = [
+      { id: "sha_01", type: "choice", question: "自由民権運動の中心人物は？", options: { a: "板垣退助", b: "伊藤博文" }, answer: "a", explanation: "土佐藩出身の人物です。" }
+    ];
+
+    // --- 理科の問題データ ---
+    const Q_RIKA = [
+      { id: "rika_01", type: "choice", question: "減数分裂で、染色体の数はどうなる？", options: { a: "2倍になる", b: "半分になる", c: "変わらない" }, answer: "b", explanation: "生殖細胞ができるときの分裂です。" }
+    ];
+
+    // --- 安全装置（ChatGPT提案）---
+    function deepFreeze(o){ Object.freeze(o); Object.getOwnPropertyNames(o).forEach(k=>{ const v=o[k]; if(typeof v==="object"&&v!==null&&!Object.isFrozen(v)) deepFreeze(v); }); return o;}
+    function ensureUniqueIds(groups){ const seen=new Set(); for(const [subj, arr] of Object.entries(groups)){ for(const q of arr){ if(seen.has(q.id)) { console.error(`ID重複: ${q.id} (${subj})`); } seen.add(q.id); } } }
+
+    // --- データを統合 ---
+    const ALL_QUESTIONS = {
+      english: Q_ENGLISH,
+      kokugo: Q_KOKUGO,
+      shakai:  Q_SHAKAI,
+      rika:    Q_RIKA,
+    };
+    ensureUniqueIds(ALL_QUESTIONS);
+    deepFreeze(ALL_QUESTIONS);
+
+    // ===== 2. アプリの主要な変数 =====
+    const STATUS = { PERFECT: 'perfect', REVIEW: 'review' };
+    const SUBJECT_NAMES = { english: '英語', kokugo: '国語', shakai: '社会', rika: '理科' };
+    let currentSubject = '';
+    let currentQuestions = [];
+    let currentIndex = 0;
+    let progress = {};
+
+    // ===== 3. 主要なDOM要素 =====
+    const homeScreen = document.getElementById('home-screen');
+    const quizScreen = document.getElementById('quiz-screen');
+    const quizTitle = document.getElementById('quiz-title');
+    const progressText = document.getElementById('progress-text');
+    const questionText = document.getElementById('question-text');
+    const optionsContainer = document.getElementById('options-container');
+    const explanationBox = document.getElementById('explanation-box');
+    const selfEvalContainer = document.getElementById('self-eval-container');
+
+    // ★★★ 安全なテキスト表示関数 ★★★
+    function setQuestionText(el, text) {
+      const esc = String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      el.innerHTML = esc.replace(/\n/g, "<br>");
+    }
+
+    // ===== 4. クイズのロジック =====
+    function startQuiz(subject) {
+      currentSubject = subject;
+      loadProgress();
+      
+      if (!progress || typeof progress !== 'object') progress = {};
+      if (!progress.statuses || typeof progress.statuses !== 'object') progress.statuses = {};
+
+      const reviewQuestions = ALL_QUESTIONS[subject].filter(q => q.type === 'choice' && progress.statuses[q.id] === STATUS.REVIEW);
+      
+      if (progress.isReviewMode && reviewQuestions.length > 0) {
+        currentQuestions = reviewQuestions;
+      } else {
+        currentQuestions = ALL_QUESTIONS[subject];
+        progress.isReviewMode = false;
+      }
+
+      // 非対応タイプ（並べ替えなど）は現行UIでは未対応のため除外します
+      currentQuestions = currentQuestions.filter(q => q.type === 'choice');
+
+      if (currentIndex < 0 || currentIndex >= currentQuestions.length) {
+        currentIndex = 0;
+      }
+      
+      showScreen('quiz');
+      displayQuestion();
+    }
+
+    function displayQuestion() {
+      if (currentIndex >= currentQuestions.length) {
+        handleQuizEnd();
+        return;
+      }
+
+      const q = currentQuestions[currentIndex];
+      quizTitle.textContent = SUBJECT_NAMES[currentSubject] || currentSubject;
+      progressText.textContent = `${currentIndex + 1} / ${currentQuestions.length} 問`;
+      
+      setQuestionText(questionText, q.question);
+      
+      optionsContainer.innerHTML = '';
+      explanationBox.style.display = 'none';
+      selfEvalContainer.innerHTML = '';
+
+      const keys = Object.keys(q.options).sort();
+      for (const key of keys) {
+        const button = document.createElement('button');
+        button.className = 'option-button';
+        button.dataset.key = key;
+        button.textContent = `${key}. ${q.options[key]}`;
+        button.onclick = () => checkAnswer(key, q.answer);
+        optionsContainer.appendChild(button);
+      }
+    }
+
+    function checkAnswer(selectedKey, correctKey) {
+      const buttons = optionsContainer.getElementsByTagName('button');
+      for (let i = 0; i < buttons.length; i++) buttons[i].disabled = true;
+
+      for (let i = 0; i < buttons.length; i++) {
+        const key = buttons[i].dataset.key;
+        if (key === correctKey) {
+          buttons[i].classList.add('correct');
+        } else if (key === selectedKey) {
+          buttons[i].classList.add('incorrect');
+        }
+      }
+
+      const q = currentQuestions[currentIndex];
+      explanationBox.textContent = q.explanation;
+      explanationBox.style.display = 'block';
+      
+      createSelfEvalButtons();
+    }
+    
+    function createSelfEvalButtons() {
+        selfEvalContainer.innerHTML = `
+            <div class="self-eval-button perfect-btn" onclick="handleSelfEvaluation(STATUS.PERFECT)">完璧！✨</div>
+            <div class="self-eval-button review-btn" onclick="handleSelfEvaluation(STATUS.REVIEW)">あやしい…💦</div>
+        `;
+    }
+
+    function handleSelfEvaluation(status) {
+      const q = currentQuestions[currentIndex];
+      progress.statuses[q.id] = status;
+      currentIndex++;
+      flushProgress();
+      displayQuestion();
+    }
+
+    function handleQuizEnd() {
+      const remainCount = (ALL_QUESTIONS[currentSubject] || []).filter(q => q.type === 'choice' && progress.statuses[q.id] === STATUS.REVIEW).length;
+      if (remainCount > 0) {
+        if (confirm(`お疲れ様！\nまだ「あやしい」問題が ${remainCount} 問あります。続けて復習しますか？`)) {
+          progress.isReviewMode = true;
+          currentIndex = 0;
+          flushProgress();
+          startQuiz(currentSubject);
+          return;
+        }
+      }
+      alert('全問終了！お疲れ様でした！');
+      showScreen('home');
+    }
+
+    // ===== 最小ヘルパー（未定義なら用意） =====
+    if (typeof showScreen !== 'function') {
+      function showScreen(screenName) {
+        document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
+        const el = document.getElementById(`${screenName}-screen`);
+        if (el) el.style.display = 'block';
+      }
+    }
+    if (typeof loadProgress !== 'function') {
+      function loadProgress() {
+        // 進捗管理が未実装でも動作を止めないための最小実装
+        progress = progress && typeof progress === 'object' ? progress : { statuses: {}, isReviewMode: false };
+        if (!progress.statuses || typeof progress.statuses !== 'object') progress.statuses = {};
+      }
+    }
+    if (typeof flushProgress !== 'function') {
+      function flushProgress() { /* no-op fallback */ }
+    }
+
+    // ===== 初期表示（DOM読み込み後にHOMEを必ず表示） =====
+    document.addEventListener('DOMContentLoaded', () => {
+      showScreen('home');
+      bindHomeButtons();
+    });
+
+  </script>
+</body>
+</html>
