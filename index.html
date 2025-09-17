@@ -44,6 +44,31 @@
       box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
     .button { border: none; -webkit-appearance: none; appearance: none; -webkit-tap-highlight-color: transparent; }
+
+    /* ===== HOME画面 科目グリッドレイアウト ===== */
+    .subject-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 1rem;
+      max-width: 600px;
+      margin: 2rem auto;
+    }
+    .subject-button {
+      padding: 2rem 1rem;
+      border-radius: 16px;
+      background-color: #4CAF50;
+      color: white;
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      border: none;
+      -webkit-appearance: none;
+      appearance: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .subject-button:active { opacity: 0.85; }
     .question-box {
       background-color: white;
       padding: 2rem;
@@ -118,10 +143,15 @@
           </label>
         </div>
       </div>
-      <button class="button" type="button" data-subject="english">英語</button>
-      <button class="button" type="button" data-subject="kokugo">国語</button>
-      <button class="button" type="button" data-subject="shakai">社会</button>
-      <button class="button" type="button" data-subject="rika">理科</button>
+      <div class="subject-grid">
+        <button class="subject-button" type="button" data-subject="english">英語</button>
+        <button class="subject-button" type="button" data-subject="kokugo">国語</button>
+        <button class="subject-button" type="button" data-subject="rika">理科</button>
+        <button class="subject-button" type="button" data-subject="shakai">社会</button>
+        <button class="subject-button" type="button" data-subject="kateika">家庭・技科</button>
+        <button class="subject-button" type="button" data-subject="bijutsu">美術</button>
+        <button class="subject-button" type="button" data-subject="taiiku">体育</button>
+      </div>
     </div>
 
     <!-- ===== 問題画面 ===== -->
@@ -148,7 +178,7 @@
       const home = document.getElementById('home-screen');
       if (!home) return;
       const handler = (subj) => (e) => { e.preventDefault(); startQuiz(subj); };
-      home.querySelectorAll('.button[data-subject]').forEach(btn => {
+      home.querySelectorAll('.subject-button[data-subject]').forEach(btn => {
         const subj = btn.dataset.subject;
         // 多重登録を避けるため一度だけ
         if (!btn.__bound) {
@@ -188,7 +218,33 @@
 
     // --- 国語の問題データ ---
     const Q_KOKUGO = [
-      { id: "koku_01", type: "choice", question: "「明鏡止水」の読み方は？", options: { a: "めいきょうしすい", b: "みょうきょうしすい" }, answer: "a", explanation: "基本的な四字熟語です。" }
+
+  {"id": "koku_s01", "type": "choice", "question": "「会社の将来をモサクする。」\nこのカタカナを漢字で正しく書いたものはどれ？", "options": {"a": "模索", "b": "摸索", "c": "模柵"}, "answer": "a", "explanation": "「手本」や「模様」の「模」と、「探す」という意味の「索」を使います。「摸索」の「摸」は「手探り」という意味で間違いやすいので注意！"},
+  {"id": "koku_s02", "type": "choice", "question": "「チョウサの対象となる。」\nこのカタカナを漢字で正しく書いたものはどれ？", "options": {"a": "調査", "b": "調車", "c": "朝査"}, "answer": "a", "explanation": "「調べる」という意味の「調」と、「検査」の「査」を組み合わせた言葉です。"},
+  {"id": "koku_s03", "type": "choice", "question": "「責任をテンカする。」\nこのカタカナを漢字で正しく書いたものはどれ？", "options": {"a": "転化", "b": "点火", "c": "転嫁"}, "answer": "c", "explanation": "「嫁（よめ）」という字には「自分の過ちを人のせいにする」という意味もあります。「責任をお嫁に出す」とイメージすると覚えやすいです。"},
+  {"id": "koku_s04", "type": "choice", "question": "「このパンは、まだ食べられる。」\n下線部の助動詞「られる」の意味はどれ？", "options": {"a": "受け身", "b": "可能", "c": "尊敬", "d": "自発"}, "answer": "b", "explanation": "「食べることができる」という意味なので「可能」です。「～できる」と置き換えられれば可能！"},
+  {"id": "koku_s05", "type": "choice", "question": "「先生もその映画をご覧になられたそうだ。」\n下線部の助動動詞「られ」の意味はどれ？", "options": {"a": "受け身", "b": "可能", "c": "尊敬", "d": "自発"}, "answer": "c", "explanation": "「ご覧になる」という尊敬語についている「られる」は「尊敬」の意味になります。先生など、目上の人の行動に使われます。"},
+  {"id": "koku_s06", "type": "choice", "question": "優美で理知的な歌が多く、紀貫之らが撰者である平安時代の和歌集はどれ？", "options": {"a": "万葉集", "b": "古今和歌集", "c": "新古今和歌集"}, "answer": "b", "explanation": "平安時代のキーワードは「たをやめぶり（優美・理知的）」。代表的な撰者が紀貫之である「古今和歌集」が正解です。"},
+  {"id": "koku_a01", "type": "choice", "question": "「春過ぎて 夏来たるらし 白たへの 衣干したり 天の香具山」\nこの歌の作者は誰？", "options": {"a": "柿本人麻呂", "b": "額田王", "c": "持統天皇"}, "answer": "c", "explanation": "万葉集に収められている有名な歌で、作者は持統天皇です。季節の移り変わりを詠んでいます。"},
+  {"id": "koku_s07", "type": "choice", "question": "詩『挨拶』で、「焼けただれた顔」と対比的に描かれているのは、どのような顔？", "options": {"a": "すがすがしい朝の顔", "b": "すこやかな今日の顔", "c": "戦火の跡もとどめぬ"}, "answer": "b", "explanation": "この詩は「原爆による過去の悲劇」と「現在の平和な日常」を対比しています。「すこやかな今日の顔」が現在の平和を象徴しています。"},
+  {"id": "koku_a02", "type": "choice", "question": "『アラスカとの出会い』で、筆者がアラスカへ行く直接のきっかけとなったものは何？", "options": {"a": "友人からの手紙", "b": "テレビ番組", "c": "一冊の写真集"}, "answer": "c", "explanation": "筆者は神田の古本屋で偶然見つけた一冊の写真集の中にある、シシュマレフ村の写真に強く心を惹かれ、アラスカへ行くことを決意しました。"},
+  {"id": "koku_a03", "type": "choice", "question": "『奄美・沖縄』で述べられている、世界自然遺産が抱える対立した二つのテーマとは何？", "options": {"a": "伝統文化 と 外来文化", "b": "経済効果 と 自然保護", "c": "島の生活 と 都市の生活"}, "answer": "b", "explanation": "この記事では、観光客が増えることによる「経済効果」と、それによって貴重な自然が破壊される危険性という「自然保護」の問題をどう両立させるかがテーマです。"},
+  {"id": "koku_s08", "type": "choice", "question": "助動詞「う・よう」には推量・意志・勧誘の意味があります。\n「さあ、みんなで考えよう。」の「よう」の意味はどれ？", "options": {"a": "推量（～だろう）", "b": "意志（～するつもりだ）", "c": "勧誘（～しませんか）"}, "answer": "c", "explanation": "「みんなで～しよう」と相手を誘っているので「勧誘」です。「私がやろう」なら意志、「明日は晴れるだろう」なら推量になります。"},
+  {"id": "koku_s09", "type": "choice", "question": "奈良時代に成立し、「ますらをぶり」と評される力強い歌風が特徴の和歌集はどれ？", "options": {"a": "万葉集", "b": "古今和歌集", "c": "新古今和歌集"}, "answer": "a", "explanation": "「ますらをぶり（男性的で力強い）」は『万葉集』のキーワードです。天皇から農民まで、様々な身分の人の歌が収められています。"},
+  {"id": "koku_a04", "type": "choice", "question": "詩『挨拶』で、筆者が「りつぜんとする」のはなぜ？ 最も適切なものを選びなさい。", "options": {"a": "目の前の人の美しさに感動したから。", "b": "悲惨な原爆写真のことを思い出して悲しくなったから。", "c": "平和な日常の中に、核戦争でそれが失われるかもしれない危険を感じたから。"}, "answer": "c", "explanation": "「りつぜんとする」は「恐ろしさで身震いする」という意味です。平和な顔の「明日」を想像した時に、その平和が核によって脅かされているという恐ろしい現実に気づいたのです。"},
+  {"id": "koku_a05", "type": "choice", "question": "『アラスカとの出会い』で、筆者は人生をどのようなものだと考えている？", "options": {"a": "自分の強い意志で切り開いていくもの", "b": "たくさんの偶然の出会いが重なってできあがっていくもの", "c": "あらかじめ運命によって全てが決められているもの"}, "answer": "b", "explanation": "筆者は「かぎりなく無数の偶然が続いてゆくだけ」と述べています。古本屋での一冊の写真集との出会いのように、偶然が人生を大きく動かすと考えているのです。"},
+  {"id": "koku_b01", "type": "choice", "question": "助動詞「た」には過去・完了・存続などの意味があります。\n「壁にかかっていた絵」の「いた」の意味はどれ？", "options": {"a": "過去", "b": "完了", "c": "存続"}, "answer": "c", "explanation": "「～ていた」「～てある」の形で、「～という状態が続いている」ことを表す場合、「存続」の意味になります。動作が終わったことを示す「完了」との区別がポイントです。"},
+  {"id": "koku_s10", "type": "choice", "question": "『古今和歌集 仮名序』で、和歌の力の大きさを説明するために挙げられていないものはどれ？", "options": {"a": "天地を動かす", "b": "鬼神をあはれと思わせる", "c": "死者をよみがえらせる"}, "answer": "c", "explanation": "『仮名序』では、和歌の力を「力をも入れずして天地を動かし、目に見えぬ鬼神をもあはれと思わせ…」と表現していますが、「死者をよみがえらせる」とまでは言っていません。"},
+  {"id": "koku_a06", "type": "choice", "question": "『奄美・沖縄』で問題になっている「オーバーツーリズム」とは、どのような意味？", "options": {"a": "観光客が減りすぎて、経済が成り立たなくなること", "b": "観光客が増えすぎて、自然環境や住民の生活に悪影響が出ること", "c": "海外からの観光客のマナーが悪いこと"}, "answer": "b", "explanation": "「オーバーツーリズム」は「観光公害」とも訳されます。観光客がキャパシティを超えて押し寄せることで起こる様々な問題のことです。"},
+  {"id": "koku_s11", "type": "choice", "question": "詩『挨拶』の最終連です。\n言葉を正しく並べ替えると、どのようになりますか？", "options": {"a": "やすらかに 美しく 油断していた", "b": "やすらかに 油断していた 美しく", "c": "美しく やすらかに 油断していた"}, "answer": "a", "explanation": "最終連「やすらかに 美しく 油断していた」は、原爆で亡くなった人々と、今を生きる私たちへのメッセージが込められた、この詩の重要な締めくくりです。"},
+  {"id": "koku_b02", "type": "choice", "question": "鎌倉時代に成立し、「幽玄」や「有心」といった、余韻を重視する歌風が特徴の和歌集はどれ？", "options": {"a": "万葉集", "b": "古今和歌集", "c": "新古今和歌集"}, "answer": "c", "explanation": "「幽玄（奥深く、かすかな趣）」や「有心（内容が深く、優雅な美しさ）」は、『新古今和歌集』の重要なキーワードです。藤原定家らが撰者です。"},
+  {"id": "koku_a07", "type": "choice", "question": "「ユウシュウな成績をおさめる。」\nこのカタカナを漢字で正しく書いたものはどれ？", "options": {"a": "有終", "b": "優秀", "c": "憂愁"}, "answer": "b", "explanation": "成績が「すぐれている」という意味なので「優秀」です。「有終」は「有終の美を飾る」のように最後までやり遂げること、「憂愁」は「うれい」という意味です。"},
+  {"id": "koku_s12", "type": "choice", "question": "助動詞「ない」は、動詞のどの活用形に接続しますか？", "options": {"a": "未然形", "b": "連用形", "c": "終止形"}, "answer": "a", "explanation": "「書か（未然形）ない」「起き（未然形）ない」のように、打ち消しの助動詞「ない」は未然形に接続します。これは文法の基本ルールです。"},
+  {"id": "koku_a08", "type": "choice", "question": "『古今和歌集 仮名序』の冒頭の一節です。\n言葉を正しく並べ替えると、どのようになりますか？", "options": {"a": "やまとうたは 人の心を 種として", "b": "人の心を やまとうたは 種として", "c": "やまとうたは 種として 人の心を"}, "answer": "a", "explanation": "「やまとうたは、人の心を種として、よろづの言の葉とぞなれりける。」という有名な一節です。和歌が人の心から生まれることを、植物が種から芽吹くことに例えています。"},
+  {"id": "koku_s13", "type": "choice", "question": "「ソチを講じる。」\nこのカタカナを漢字で正しく書いたものはどれ？", "options": {"a": "処置", "b": "措置", "c": "素地"}, "answer": "b", "explanation": "「措置」は、ある事態に対応するための処置をとることです。「処置」は手当てや処理をすること。文脈によって使い分けが必要です。"},
+  {"id": "koku_b03", "type": "choice", "question": "「私は」「その本を」「です」「読みたい」という言葉を使い、「私はその本を読みたい」という文を作るとき、不要な言葉はどれ？", "options": {"a": "私は", "b": "です", "c": "読みたい"}, "answer": "b", "explanation": "希望を表す助動詞「たい」は、それ自体で文を終えることができます。「～です」を付けると丁寧になりますが、文を完成させるために必須ではありません。"},
+  {"id": "koku_a09", "type": "choice", "question": "詩『挨拶』の最終連「油断していた」という言葉は、誰に向けられたものですか？", "options": {"a": "原爆を投下したアメリカ", "b": "当時の日本の指導者", "c": "原爆で亡くなった人々と、現代を生きる私たち"}, "answer": "c", "explanation": "「あの時、人々は油断していた。そして、平和な今を生きるあなた（私たち）も油断しているのではないか？」という、過去と現在をつなぐ鋭い問いかけです。"}
+
     ];
 
     // --- 社会の問題データ ---
@@ -201,6 +257,26 @@
       { id: "rika_01", type: "choice", question: "減数分裂で、染色体の数はどうなる？", options: { a: "2倍になる", b: "半分になる", c: "変わらない" }, answer: "b", explanation: "生殖細胞ができるときの分裂です。" }
     ];
 
+    // --- 副教科の問題データ（後で追加可。空でも動作させるためのプレースホルダ） ---
+    const Q_KATEIKA = [];
+    const Q_BIJUTSU  = [];
+    const Q_TAIIKU   = [
+      {"id": "hoken_s01", "type": "choice", "question": "細菌やウイルスなどの【病原体】が体の中に侵入して、定着・増殖することを何といいますか？", "options": {"a": "感染症", "b": "感染", "c": "発病"}, "answer": "b", "explanation": "病原体が体に入ることを「感染」といいます。「感染症」は、感染によって病気が起こることを指します。"},
+      {"id": "hoken_s02", "type": "choice", "question": "感染症が成立するための3つの条件を正しい順序で並べたものはどれですか？", "options": {"a": "感染経路 → 感染源 → 体の抵抗力", "b": "感染源 → 感染経路 → 体の抵抗力", "c": "体の抵抗力 → 感染源 → 感染経路"}, "answer": "b", "explanation": "感染症は、①病原体を持つ「感染源」があり、②それがうつるための「感染経路」を通って、③「体の抵抗力」が弱った人に感染することで成立します。"},
+      {"id": "hoken_s03", "type": "choice", "question": "新型コロナウイルス感染症のように、新しく発見された感染症を特に何といいますか？", "options": {"a": "再興感染症", "b": "新興感染症", "c": "流行感染症"}, "answer": "b", "explanation": "新しく発見された感染症を「新興感染症」といいます。ちなみに、結核のように一度は制圧されたかに見えて再び流行するものを「再興感染症」といいます。"},
+      {"id": "hoken_s04", "type": "choice", "question": "性感染症の一つである【性器クラミジア感染症】の大きな特徴として正しいものはどれですか？", "options": {"a": "男性は症状が出ないことが多い", "b": "一度かかると再発することはない", "c": "女性は症状が出ないことが多い"}, "answer": "c", "explanation": "性器クラミジア感染症は、特に女性で症状が出にくく、気づかないうちに進行して不妊の原因になることがあるため注意が必要です。"},
+      {"id": "hoken_s05", "type": "choice", "question": "性感染症を治療しないで放置した場合に起こりうる、最も深刻な問題の一つは何ですか？", "options": {"a": "不眠の原因になる", "b": "不妊の原因になる", "c": "視力が低下する"}, "answer": "b", "explanation": "性感染症を放置すると、男女ともに不妊の原因になることがあります。また、母親から胎児に感染する「母子感染」のリスクもあります。"},
+      {"id": "hoken_s06", "type": "choice", "question": "エイズの原因となるウイルスの正式名称として正しいものはどれですか？", "options": {"a": "ヒト不全免疫ウイルス", "b": "免疫不全ヒトウイルス", "c": "ヒト免疫不全ウイルス"}, "answer": "c", "explanation": "エイズの原因となるウイルスは「ヒト免疫不全ウイルス」で、アルファベット3文字で「HIV」と略されます。"},
+      {"id": "hoken_s07", "type": "choice", "question": "HIVの感染を予防するために、性的接触において有効な方法は何ですか？", "options": {"a": "低用量ピルを服用する", "b": "コンドームを正しく使用する", "c": "性交後にシャワーを浴びる"}, "answer": "b", "explanation": "HIVの感染予防には、コンドームを正しく使用することが有効です。性的接触をしないことが最も確実な予防法です。"},
+      {"id": "hoken_s08", "type": "choice", "question": "人々が自らの健康をより良くコントロールし、改善できるようにしていく社会全体の取り組みを何といいますか？", "options": {"a": "セルフメディケーション", "b": "ヘルスプロモーション", "c": "ユニバーサルデザイン"}, "answer": "b", "explanation": "個人の努力だけでなく、社会全体で健康を支援する考え方や取り組みを「ヘルスプロモーション」といいます。"},
+      {"id": "hoken_s09", "type": "choice", "question": "【保健所】と【保健センター】の違いについて、正しい説明はどれですか？", "options": {"a": "保健所は市町村が運営し、身近な健康相談などを行う。", "b": "保健所は都道府県などが運営し、専門的・広域的な対策を行う。", "c": "保健センターは都道府県が運営し、食中毒対策などを行う。"}, "answer": "b", "explanation": "保健所は都道府県などが運営する専門的な機関、保健センターは市町村が運営する住民に身近な機関です。"},
+      {"id": "hoken_s10", "type": "choice", "question": "日常的な病気の診療や健康管理について相談できる身近な医師のことを特に何といいますか？", "options": {"a": "専門医", "b": "かかりつけ医", "c": "担当医"}, "answer": "b", "explanation": "普段から自分の体質や病歴を理解してくれている身近な医師を「かかりつけ医」といい、健康を維持するために重要な存在です。"},
+      {"id": "hoken_a01", "type": "choice", "question": "医薬品を使ったときに現れる、病気を治すといった本来の目的となる作用を何といいますか？", "options": {"a": "副作用", "b": "主作用", "c": "効果"}, "answer": "b", "explanation": "薬に期待される本来の目的の作用を「主作用」といいます。それ以外の好ましくない作用を「副作用」といいます。"},
+      {"id": "hoken_s11", "type": "choice", "question": "医師の診断・処方に基づいて出される薬のことを何といいますか？", "options": {"a": "医療用医薬品", "b": "一般用医薬品", "c": "医薬用医療品"}, "answer": "a", "explanation": "医師から処方される薬は「医療用医薬品」です。処方薬とも呼ばれます。"},
+      {"id": "hoken_s12", "type": "choice", "question": "薬局などで自分の判断で購入できる薬のことを何といいますか？", "options": {"a": "医療用医薬品", "b": "一般用医薬品", "c": "専用医薬品"}, "answer": "b", "explanation": "薬局などで直接購入できる薬は「一般用医薬品」です。大衆薬や市販薬、OTC医薬品とも呼ばれます。"},
+      {"id": "hoken_a02", "type": "choice", "question": "自分自身の健康に責任を持ち、軽いけがや病気の際に【一般用医薬品】などを使って自分で手当てすることを何といいますか？", "options": {"a": "ヘルスプロモーション", "b": "セルフケア", "c": "セルフメディケーション"}, "answer": "c", "explanation": "自分自身で健康を管理し、軽い症状のときに一般用医薬品で対処することを「セルフメディケーション」といいます。"}
+        ];
+
     // --- 安全装置（ChatGPT提案）---
     function deepFreeze(o){ Object.freeze(o); Object.getOwnPropertyNames(o).forEach(k=>{ const v=o[k]; if(typeof v==="object"&&v!==null&&!Object.isFrozen(v)) deepFreeze(v); }); return o;}
     function ensureUniqueIds(groups){ const seen=new Set(); for(const [subj, arr] of Object.entries(groups)){ for(const q of arr){ if(seen.has(q.id)) { console.error(`ID重複: ${q.id} (${subj})`); } seen.add(q.id); } } }
@@ -208,16 +284,27 @@
     // --- データを統合 ---
     const ALL_QUESTIONS = {
       english: Q_ENGLISH,
-      kokugo: Q_KOKUGO,
+      kokugo:  Q_KOKUGO,
       shakai:  Q_SHAKAI,
       rika:    Q_RIKA,
+      kateika: Q_KATEIKA,
+      bijutsu: Q_BIJUTSU,
+      taiiku:  Q_TAIIKU,
     };
     ensureUniqueIds(ALL_QUESTIONS);
     deepFreeze(ALL_QUESTIONS);
 
     // ===== 2. アプリの主要な変数 =====
     const STATUS = { PERFECT: 'perfect', REVIEW: 'review' };
-    const SUBJECT_NAMES = { english: '英語', kokugo: '国語', shakai: '社会', rika: '理科' };
+    const SUBJECT_NAMES = {
+      english: '英語',
+      kokugo:  '国語',
+      shakai:  '社会',
+      rika:    '理科',
+      kateika: '家庭・技科',
+      bijutsu: '美術',
+      taiiku:  '体育'
+    };
     let currentSubject = '';
     let currentQuestions = [];
     let currentIndex = 0;
@@ -259,7 +346,7 @@
       if (!progress.statuses || typeof progress.statuses !== 'object') progress.statuses = {};
       if (!progress.stats || typeof progress.stats !== 'object') progress.stats = {};
 
-      const allQs = ALL_QUESTIONS[subject];
+      const allQs = ALL_QUESTIONS[subject] || [];
       const reviewQuestions = allQs.filter(q => q.type === 'choice' && progress.statuses[q.id] === STATUS.REVIEW);
 
       if (startMode === 'review') {
