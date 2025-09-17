@@ -91,6 +91,11 @@
     }
     .perfect-btn { background-color: #2196F3; color: white; }
     .review-btn { background-color: #FF9800; color: white; }
+
+    /* --- 画面内ナビ（戻る） --- */
+    .topbar { display: flex; justify-content: flex-end; align-items: center; gap: .5rem; }
+    .nav-btn { border: none; -webkit-appearance: none; appearance: none; -webkit-tap-highlight-color: transparent; cursor: pointer; padding: .6rem .9rem; border-radius: 10px; background: #1f2937; color: #fff; font-size: 1rem; }
+    .nav-btn:active { opacity: .8; }
   </style>
 </head>
 <body>
@@ -100,6 +105,19 @@
     <!-- ===== HOME画面 ===== -->
     <div id="home-screen" class="screen" style="display:block;">
       <h1 style="text-align: center; font-size: 2.5rem;">期末試験・最終チェック</h1>
+      <div id="mode-select" style="max-width:500px;margin:0.5rem auto 1rem auto;padding:.6rem 1rem;background:#fff;border-radius:12px;border:1px solid #e5e7eb;font-size:1rem;">
+        <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;">
+          <strong>出題モード:</strong>
+          <label style="display:flex;align-items:center;gap:.35rem;">
+            <input type="radio" name="mode" value="all" checked>
+            <span>全問</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:.35rem;">
+            <input type="radio" name="mode" value="review">
+            <span>復習（あやしいのみ）</span>
+          </label>
+        </div>
+      </div>
       <button class="button" type="button" data-subject="english">英語</button>
       <button class="button" type="button" data-subject="kokugo">国語</button>
       <button class="button" type="button" data-subject="shakai">社会</button>
@@ -108,6 +126,9 @@
 
     <!-- ===== 問題画面 ===== -->
     <div id="quiz-screen" class="screen">
+      <div class="topbar">
+        <button id="back-home-btn" class="nav-btn" type="button">🏠 ホームへ</button>
+      </div>
       <h2 id="quiz-title" style="text-align: center; font-size: 2rem;"></h2>
       <div id="progress-text" style="text-align: center; color: #555; font-size: 1.2rem;"></div>
       <div id="question-box" class="question-box">
@@ -116,6 +137,7 @@
         <div id="explanation-box" class="explanation" style="display:none;"></div>
       </div>
       <div id="self-eval-container" class="self-eval-container"></div>
+      <div id="retry-container" class="self-eval-container" style="margin-top: .5rem;"></div>
     </div>
 
   </div>
@@ -200,6 +222,7 @@
     let currentQuestions = [];
     let currentIndex = 0;
     let progress = {};
+    let statsSubjectKey = ''; // 現在科目の進捗保存キー（ローカルストレージ用）
 
     // ===== 3. 主要なDOM要素 =====
     const homeScreen = document.getElementById('home-screen');
@@ -210,6 +233,9 @@
     const optionsContainer = document.getElementById('options-container');
     const explanationBox = document.getElementById('explanation-box');
     const selfEvalContainer = document.getElementById('self-eval-container');
+    const retryContainer = document.getElementById('retry-container');
+    const backHomeBtn = document.getElementById('back-home-btn');
+    const modeSelect = document.getElementById('mode-select');
 
     // ★★★ 安全なテキスト表示関数 ★★★
     function setQuestionText(el, text) {
@@ -218,24 +244,40 @@
     }
 
     // ===== 4. クイズのロジック =====
+    function getSelectedMode(){
+      const sel = modeSelect ? modeSelect.querySelector('input[name="mode"]:checked') : null;
+      return sel ? sel.value : 'all';
+    }
+
     function startQuiz(subject) {
       currentSubject = subject;
+      const startMode = getSelectedMode();
+      statsSubjectKey = 'progress_' + currentSubject;
       loadProgress();
       
       if (!progress || typeof progress !== 'object') progress = {};
       if (!progress.statuses || typeof progress.statuses !== 'object') progress.statuses = {};
+      if (!progress.stats || typeof progress.stats !== 'object') progress.stats = {};
 
-      const reviewQuestions = ALL_QUESTIONS[subject].filter(q => q.type === 'choice' && progress.statuses[q.id] === STATUS.REVIEW);
-      
-      if (progress.isReviewMode && reviewQuestions.length > 0) {
-        currentQuestions = reviewQuestions;
+      const allQs = ALL_QUESTIONS[subject];
+      const reviewQuestions = allQs.filter(q => q.type === 'choice' && progress.statuses[q.id] === STATUS.REVIEW);
+
+      if (startMode === 'review') {
+        progress.isReviewMode = true;
+        currentQuestions = reviewQuestions.length > 0 ? reviewQuestions : [];
       } else {
-        currentQuestions = ALL_QUESTIONS[subject];
         progress.isReviewMode = false;
+        currentQuestions = allQs;
       }
 
-      // 非対応タイプ（並べ替えなど）は現行UIでは未対応のため除外します
+      // 非対応タイプ（並べ替えなど）は現行UIでは未対応のため除外
       currentQuestions = currentQuestions.filter(q => q.type === 'choice');
+
+      // 空の復習リストだった場合のフォールバック（全問に自動切替）
+      if (progress.isReviewMode && currentQuestions.length === 0) {
+        progress.isReviewMode = false;
+        currentQuestions = allQs.filter(q => q.type === 'choice');
+      }
 
       if (currentIndex < 0 || currentIndex >= currentQuestions.length) {
         currentIndex = 0;
@@ -260,6 +302,7 @@
       optionsContainer.innerHTML = '';
       explanationBox.style.display = 'none';
       selfEvalContainer.innerHTML = '';
+      retryContainer.innerHTML = '';
 
       const keys = Object.keys(q.options).sort();
       for (const key of keys) {
@@ -286,10 +329,20 @@
       }
 
       const q = currentQuestions[currentIndex];
-      explanationBox.textContent = q.explanation;
+      // === 問題ごとの正解/不正解カウントを更新 ===
+      if (!progress.stats) progress.stats = {};
+      const stat = (progress.stats[q.id] = progress.stats[q.id] || { correct: 0, incorrect: 0 });
+      const wasCorrect = (selectedKey === correctKey);
+      if (wasCorrect) stat.correct++; else stat.incorrect++;
+      flushProgress();
+      const statNow = progress.stats && progress.stats[q.id] ? progress.stats[q.id] : { correct: 0, incorrect: 0 };
+      const correctLabel = (q.options && q.options[correctKey]) ? `${correctKey}. ${q.options[correctKey]}` : String(correctKey);
+      const selectedLabel = (q.options && q.options[selectedKey]) ? `${selectedKey}. ${q.options[selectedKey]}` : String(selectedKey);
+      const nowPart = wasCorrect ? '[今回] 正解' : '[今回] 不正解';
+      const yourPart = (!wasCorrect && q.options && q.options[selectedKey]) ? `\n[あなたの回答] ${selectedLabel}` : '';
+      explanationBox.textContent = `${q.explanation}\n${nowPart}\n[正解] ${correctLabel}${yourPart}\n[この問題の累計] 正解: ${statNow.correct} / 不正解: ${statNow.incorrect}`;
       explanationBox.style.display = 'block';
-      
-      createSelfEvalButtons();
+      createSelfEvalButtons(); // 再回答でもボタンを再度用意
     }
     
     function createSelfEvalButtons() {
@@ -297,6 +350,39 @@
             <div class="self-eval-button perfect-btn" onclick="handleSelfEvaluation(STATUS.PERFECT)">完璧！✨</div>
             <div class="self-eval-button review-btn" onclick="handleSelfEvaluation(STATUS.REVIEW)">あやしい…💦</div>
         `;
+        // すぐに増分が見えるよう、同じ問題を再挑戦できるボタンを用意
+        retryContainer.innerHTML = `
+            <button id="retry-btn" class="nav-btn" type="button">↻ もう一度この問題を解く</button>
+        `;
+        const rb = document.getElementById('retry-btn');
+        if (rb && !rb.__bound) {
+          rb.addEventListener('click', (e) => {
+            e.preventDefault();
+            retryCurrentQuestion();
+          }, { passive: false });
+          rb.__bound = true;
+        }
+    }
+
+    function retryCurrentQuestion() {
+      // 同じ問題を出し直す（インデックスは進めない）
+      const q = currentQuestions[currentIndex];
+      if (!q) return;
+      // 再描画
+      setQuestionText(questionText, q.question);
+      optionsContainer.innerHTML = '';
+      explanationBox.style.display = 'none';
+      selfEvalContainer.innerHTML = '';
+      retryContainer.innerHTML = '';
+      const keys = Object.keys(q.options).sort();
+      for (const key of keys) {
+        const button = document.createElement('button');
+        button.className = 'option-button';
+        button.dataset.key = key;
+        button.textContent = `${key}. ${q.options[key]}`;
+        button.onclick = () => checkAnswer(key, q.answer);
+        optionsContainer.appendChild(button);
+      }
     }
 
     function handleSelfEvaluation(status) {
@@ -332,19 +418,58 @@
     }
     if (typeof loadProgress !== 'function') {
       function loadProgress() {
-        // 進捗管理が未実装でも動作を止めないための最小実装
-        progress = progress && typeof progress === 'object' ? progress : { statuses: {}, isReviewMode: false };
-        if (!progress.statuses || typeof progress.statuses !== 'object') progress.statuses = {};
+        // 科目ごとの保存キーで復元（存在しない場合は初期化）
+        const key = 'progress_' + currentSubject;
+        try {
+          const saved = localStorage.getItem(key);
+          if (saved) {
+            const s = JSON.parse(saved);
+            progress = {
+              statuses: (s && s.statuses) || {},
+              isReviewMode: !!(s && s.isReviewMode),
+              stats: (s && s.stats) || {}
+            };
+            currentIndex = Number.isInteger(s && s.currentIndex) ? s.currentIndex : 0;
+          } else {
+            progress = { statuses: {}, isReviewMode: false, stats: {} };
+            currentIndex = 0;
+          }
+        } catch (e) {
+          console.warn('進捗の読み込みに失敗しました:', e);
+          progress = { statuses: {}, isReviewMode: false, stats: {} };
+          currentIndex = 0;
+        }
       }
     }
     if (typeof flushProgress !== 'function') {
-      function flushProgress() { /* no-op fallback */ }
+      function flushProgress() {
+        const key = 'progress_' + currentSubject;
+        try {
+          const state = {
+            statuses: progress.statuses || {},
+            isReviewMode: !!progress.isReviewMode,
+            currentIndex: currentIndex,
+            stats: progress.stats || {}
+          };
+          localStorage.setItem(key, JSON.stringify(state));
+        } catch (e) {
+          console.warn('進捗の保存に失敗しました:', e);
+        }
+      }
     }
 
     // ===== 初期表示（DOM読み込み後にHOMEを必ず表示） =====
     document.addEventListener('DOMContentLoaded', () => {
       showScreen('home');
       bindHomeButtons();
+      if (backHomeBtn && !backHomeBtn.__bound) {
+        backHomeBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          flushProgress();
+          showScreen('home');
+        }, { passive: false });
+        backHomeBtn.__bound = true;
+      }
     });
 
   </script>
