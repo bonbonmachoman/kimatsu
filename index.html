@@ -121,6 +121,39 @@
     .topbar { display: flex; justify-content: flex-end; align-items: center; gap: .5rem; }
     .nav-btn { border: none; -webkit-appearance: none; appearance: none; -webkit-tap-highlight-color: transparent; cursor: pointer; padding: .6rem .9rem; border-radius: 10px; background: #1f2937; color: #fff; font-size: 1rem; }
     .nav-btn:active { opacity: .8; }
+
+    /* --- モード選択ボタン --- */
+    #mode-btn-group { display: flex; justify-content: center; gap: .75rem; flex-wrap: wrap; }
+    .mode-btn {
+      /* .nav-btn と共通のスタイルを継承しつつ調整 */
+      border: 1px solid #1f2937;
+      background: #fff;
+      color: #1f2937;
+      font-size: .9rem;
+      font-weight: 600;
+      /* iPadでのタップ領域を確保 (padding-block + font-size + border) */
+      padding: .8rem 1rem;
+      min-height: 44px;
+      box-sizing: border-box;
+    }
+    .mode-btn:hover {
+      background-color: #f3f4f6; /* 濃いグレーの100相当 */
+    }
+    .mode-btn:active {
+      transform: translateY(1px);
+    }
+    .mode-btn:focus-visible {
+      outline: 3px solid #60a5fa; /* 青の400相当 */
+      outline-offset: 2px;
+    }
+    .mode-btn[aria-pressed="true"] {
+      background: #1f2937; /* 濃いグレーの800相当 */
+      color: #fff;
+      border-color: #1f2937;
+    }
+    .mode-btn[aria-pressed="true"]:hover {
+      background: #374151; /* 濃いグレーの700相当 */
+    }
   </style>
 </head>
 <body>
@@ -130,17 +163,12 @@
     <!-- ===== HOME画面 ===== -->
     <div id="home-screen" class="screen" style="display:block;">
       <h1 style="text-align: center; font-size: 2.5rem;">期末試験・最終チェック</h1>
-      <div id="mode-select" style="max-width:500px;margin:0.5rem auto 1rem auto;padding:.6rem 1rem;background:#fff;border-radius:12px;border:1px solid #e5e7eb;font-size:1rem;">
-        <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;">
-          <strong>出題モード:</strong>
-          <label style="display:flex;align-items:center;gap:.35rem;">
-            <input type="radio" name="mode" value="all" checked>
-            <span>全問</span>
-          </label>
-          <label style="display:flex;align-items:center;gap:.35rem;">
-            <input type="radio" name="mode" value="review">
-            <span>復習（あやしいのみ）</span>
-          </label>
+      <div id="mode-select" style="max-width:600px; margin: 1.5rem auto; text-align: center;">
+        <strong style="display: block; font-size: 1rem; margin-bottom: 0.75rem;">出題モード:</strong>
+        <div id="mode-btn-group" role="group" aria-label="出題モード選択">
+          <button type="button" class="nav-btn mode-btn" data-mode="all" data-selected="true" aria-pressed="true">全問</button>
+          <button type="button" class="nav-btn mode-btn" data-mode="review" data-selected="false" aria-pressed="false">復習（あやしいのみ）</button>
+          <button type="button" class="nav-btn mode-btn" data-mode="review_unseen" data-selected="false" aria-pressed="false">復習＋未着手</button>
         </div>
       </div>
       <div class="subject-grid">
@@ -189,6 +217,47 @@
             handler(subj)(e);
           }, { passive: false });
           btn.__bound = true;
+        }
+      });
+    }
+
+    // ===== モード選択ボタンの初期化とロジック =====
+    function initializeModeSelector() {
+      const group = document.getElementById('mode-btn-group');
+      if (!group) return;
+      const buttons = Array.from(group.querySelectorAll('.mode-btn'));
+
+      const selectMode = (selectedBtn) => {
+        buttons.forEach(btn => {
+          const isSelected = btn === selectedBtn;
+          btn.setAttribute('data-selected', String(isSelected));
+          btn.setAttribute('aria-pressed', String(isSelected));
+        });
+      };
+
+      group.addEventListener('click', (e) => {
+        const target = e.target.closest('.mode-btn');
+        if (target) {
+          selectMode(target);
+        }
+      });
+
+      group.addEventListener('keydown', (e) => {
+        const current = document.activeElement;
+        if (!current.classList.contains('mode-btn')) return;
+
+        let currentIndex = buttons.indexOf(current);
+
+        if (e.key === 'ArrowRight') {
+          e.preventDefault();
+          const next = buttons[(currentIndex + 1) % buttons.length];
+          next.focus();
+          selectMode(next);
+        } else if (e.key === 'ArrowLeft') {
+          e.preventDefault();
+          const prev = buttons[(currentIndex - 1 + buttons.length) % buttons.length];
+          prev.focus();
+          selectMode(prev);
         }
       });
     }
@@ -367,7 +436,7 @@
   {"id": "rika_a09", "type": "choice", "question": "動物の体において、減数分裂はどこで行われますか？", "options": {"a": "皮膚や骨などの体細胞", "b": "脳や神経", "c": "精巣や卵巣"}, "answer": "c", "explanation": "減数分裂は、生殖細胞（精子や卵）をつくるための特別な細胞分裂です。そのため、それらをつくる器官である精巣や卵巣だけで行われます。"},
   {"id": "rika_b01", "type": "choice", "question": "動物において、精子の核と卵の核が合体することを何といいますか？", "options": {"a": "発生", "b": "受精", "c": "分裂"}, "answer": "b", "explanation": "受精とは、雄の生殖細胞（精子）と雌の生殖細胞（卵）が合体することです。受精によってできた1つの細胞を「受精卵」といいます。"},
   {"id": "rika_b02", "type": "choice", "question": "受精卵が細胞分裂をくり返して、成体になるまでの過程を何といいますか？", "options": {"a": "発生", "b": "生殖", "c": "成長"}, "answer": "a", "explanation": "発生は、1つの受精卵から、からだの様々な部分が作られて個体が完成するまでの過程全体を指します。"},
-  {"id":- "rika_b03", "type": "choice", "question": "ジャガイモをいもからふやしたり、サツマイモをくきからふやしたりする無性生殖を特に何といいますか？", "options": {"a": "栄養生殖", "b": "分裂", "c": "出芽"}, "answer": "a", "explanation": "植物が、体の一部である葉・くき・根などから新しい個体をつくるふえ方を栄養生殖といいます。無性生殖の一種です。"},
+  {"id": "rika_b03", "type": "choice", "question": "ジャガイモをいもからふやしたり、サツマイモをくきからふやしたりする無性生殖を特に何といいますか？", "options": {"a": "栄養生殖", "b": "分裂", "c": "出芽"}, "answer": "a", "explanation": "植物が、体の一部である葉・くき・根などから新しい個体をつくるふえ方を栄養生殖といいます。無性生殖の一種です。"},
   {"id": "rika_b04", "type": "choice", "question": "細胞分裂のときに核の中に現れる、ひも状のものを何といいますか？", "options": {"a": "染色体", "b": "葉緑体", "c": "液胞"}, "answer": "a", "explanation": "染色体は、遺伝情報（遺伝子）をふくんでおり、細胞分裂の際に均等に分配されることで、親から子へ正確に情報が伝わります。"},
   {"id": "rika_b05", "type": "choice", "question": "体細胞分裂の過程で、染色体が細胞の中央に並ぶのは、どの段階の次ですか？", "options": {"a": "染色体が両極に分かれて移動する段階", "b": "染色体が現れ始める段階", "c": "2つの細胞に分かれる段階"}, "answer": "b", "explanation": "体細胞分裂は、①染色体が現れる → ②中央に並ぶ → ③両極に分かれる → ④2つの細胞になる、という順で進みます。"},
   {"id": "rika_b06", "type": "choice", "question": "被子植物において、受精後に種子になるのはどの部分ですか？", "options": {"a": "子房", "b": "胚珠", "c": "柱頭"}, "answer": "b", "explanation": "めしべの根元にある子房の中の「胚珠」が、受精後に成長して種子になります。ちなみに「子房」全体は果実になります。"},
@@ -378,7 +447,7 @@
   {"id": "rika_b11", "type": "choice", "question": "体細胞分裂と減数分裂に共通する点は何ですか？", "options": {"a": "分裂後の染色体の数が半分になる", "b": "分裂前に染色体が複製される", "c": "生殖器官だけで起こる"}, "answer": "b", "explanation": "どちらの分裂でも、分裂が始まる前に染色体が複製されて2倍になります。体細胞分裂ではそれが1回の分裂で分配され、減数分裂では2回の分裂で分配されます。"},
   {"id": "rika_b12", "type": "choice", "question": "無性生殖と比べて、有性生殖がもつ最大の利点は何ですか？", "options": {"a": "すばやく子孫を増やせる", "b": "親と全く同じ形質の子ができる", "c": "多様な形質の子ができる"}, "answer": "c", "explanation": "有性生殖では、両親の遺伝子が組み合わさるため、多様な（親とは少し違う）形質の子が生まれます。これにより、環境の変化に対応しやすくなり、種の存続に有利とされています。"},
   {"id": "rika_b13", "type": "choice", "question": "花粉がめしべの柱頭につくことを何といいますか？", "options": {"a": "受精", "b": "受粉", "c": "発生"}, "answer": "b", "explanation": "受粉は、受精の前段階です。受粉の後、花粉から花粉管が伸びて胚珠に達し、精細胞と卵細胞が合体することで受精が起こります。"},
-  {"id":- "rika_b14", "type": "choice", "question": "体細胞分裂が終わったあとの新しい細胞は、もとの細胞と比べて大きさはどうなっていますか？", "options": {"a": "もとの細胞より大きい", "b": "もとの細胞と同じ大きさ", "c": "もとの細胞より小さい"}, "answer": "c", "explanation": "分裂直後の細胞は、もとの細胞より小さくなっています。その後、細胞が大きくなる「成長」を経て、もとの細胞と同じ大きさになります。"},
+  {"id": "rika_b14", "type": "choice", "question": "体細胞分裂が終わったあとの新しい細胞は、もとの細胞と比べて大きさはどうなっていますか？", "options": {"a": "もとの細胞より大きい", "b": "もとの細胞と同じ大きさ", "c": "もとの細胞より小さい"}, "answer": "c", "explanation": "分裂直後の細胞は、もとの細胞より小さくなっています。その後、細胞が大きくなる「成長」を経て、もとの細胞と同じ大きさになります。"},
   {"id": "rika_b15", "type": "choice", "question": "子の遺伝子の組み合わせがAaのとき、形質として現れるのはどちらの遺伝子ですか？", "options": {"a": "顕性の遺伝子(A)", "b": "潜性の遺伝子(a)", "c": "両方とも現れる"}, "answer": "a", "explanation": "顕性の遺伝子と潜性の遺伝子がペアになった場合、形質として現れるのは顕性の遺伝子の方です。潜性の形質が現れるのは、aaのように潜性の遺伝子がペアになったときだけです。"}
 
     ];
@@ -456,43 +525,73 @@
 
     // ===== 4. クイズのロジック =====
     function getSelectedMode(){
-      const sel = modeSelect ? modeSelect.querySelector('input[name="mode"]:checked') : null;
-      return sel ? sel.value : 'all';
+      // 新しいボタンUIを優先して参照
+      const selectedBtn = document.querySelector('#mode-btn-group .mode-btn[data-selected="true"]');
+      if (selectedBtn) return selectedBtn.dataset.mode;
+      // フォールバックとして古いラジオボタンUIを参照
+      const legacyRadio = document.querySelector('#mode-select input[name="mode"]:checked');
+      return legacyRadio ? legacyRadio.value : 'all';
     }
 
     function startQuiz(subject) {
       currentSubject = subject;
       const startMode = getSelectedMode();
       statsSubjectKey = 'progress_' + currentSubject;
-      loadProgress();
-      
+      loadProgress(); // progress.currentIndex が復元される
+
       if (!progress || typeof progress !== 'object') progress = {};
       if (!progress.statuses || typeof progress.statuses !== 'object') progress.statuses = {};
       if (!progress.stats || typeof progress.stats !== 'object') progress.stats = {};
 
-      const allQs = ALL_QUESTIONS[subject] || [];
-      const reviewQuestions = allQs.filter(q => q.type === 'choice' && progress.statuses[q.id] === STATUS.REVIEW);
+      const allQs = (ALL_QUESTIONS[subject] || []).filter(q => q.type === 'choice');
+      let questionsToShow = [];
 
+      // --- モードごとに出題リストを作成 ---
       if (startMode === 'review') {
-        progress.isReviewMode = true;
-        currentQuestions = reviewQuestions.length > 0 ? reviewQuestions : [];
-      } else {
-        progress.isReviewMode = false;
-        currentQuestions = allQs;
+        questionsToShow = allQs.filter(q => progress.statuses[q.id] === STATUS.REVIEW);
+        if (questionsToShow.length === 0) {
+          alert('「あやしい」にチェックされた問題はありませんでした。');
+          return;
+        }
+      } else if (startMode === 'review_unseen') {
+        const reviewQs = allQs.filter(q => progress.statuses[q.id] === STATUS.REVIEW);
+        const unseenQs = allQs.filter(q => !progress.stats.hasOwnProperty(q.id));
+        // IDの重複を避けて結合
+        const combined = new Map();
+        reviewQs.forEach(q => combined.set(q.id, q));
+        unseenQs.forEach(q => combined.set(q.id, q));
+        questionsToShow = Array.from(combined.values());
+        
+        if (questionsToShow.length === 0) {
+          alert('復習・未着手の問題はありません。');
+          return;
+        }
+      } else { // 'all' モード
+        questionsToShow = allQs;
       }
 
-      // 非対応タイプ（並べ替えなど）は現行UIでは未対応のため除外
-      currentQuestions = currentQuestions.filter(q => q.type === 'choice');
-
-      // 空の復習リストだった場合のフォールバック（全問に自動切替）
-      if (progress.isReviewMode && currentQuestions.length === 0) {
-        progress.isReviewMode = false;
-        currentQuestions = allQs.filter(q => q.type === 'choice');
-      }
-
-      // 新規開始時は常に先頭から（前回のcurrentIndexは使わない）
-      currentIndex = 0;
+      currentQuestions = questionsToShow;
       
+      if (currentQuestions.length === 0 && startMode !== 'all') {
+        // 'all'以外でリストが空なら何もしない（上流でalert済み）
+        return;
+      }
+      if (currentQuestions.length === 0) {
+        alert('この科目には問題がありません。');
+        return;
+      }
+
+      // --- 開始位置を決定 ---
+      let startIndex = 0;
+      if (startMode === 'all' && progress.currentIndex > 0 && progress.currentIndex < currentQuestions.length) {
+        if (confirm(`前回の続き（${progress.currentIndex + 1}問目）から再開しますか？`)) {
+          startIndex = progress.currentIndex;
+        }
+      }
+      currentIndex = startIndex;
+      progress.currentIndex = currentIndex; // 開始インデックスを保存
+      flushProgress();
+
       showScreen('quiz');
       displayQuestion();
     }
@@ -544,7 +643,8 @@
       const stat = (progress.stats[q.id] = progress.stats[q.id] || { correct: 0, incorrect: 0 });
       const wasCorrect = (selectedKey === correctKey);
       if (wasCorrect) stat.correct++; else stat.incorrect++;
-      flushProgress();
+      progress.currentIndex = currentIndex; // 回答時点のインデックスを保存
+      flushProgress(); // ここでは回答状況のみ保存
       const statNow = progress.stats && progress.stats[q.id] ? progress.stats[q.id] : { correct: 0, incorrect: 0 };
       const correctLabel = (q.options && q.options[correctKey]) ? `${correctKey}. ${q.options[correctKey]}` : String(correctKey);
       const selectedLabel = (q.options && q.options[selectedKey]) ? `${selectedKey}. ${q.options[selectedKey]}` : String(selectedKey);
@@ -599,17 +699,22 @@
       const q = currentQuestions[currentIndex];
       progress.statuses[q.id] = status;
       currentIndex++;
+      // ★★★ ここで次の問題番号を保存 ★★★
+      progress.currentIndex = currentIndex;
       flushProgress();
       displayQuestion();
     }
 
     function handleQuizEnd() {
+      progress.currentIndex = 0; // 進捗をリセット
+      flushProgress();
+
       const remainCount = (ALL_QUESTIONS[currentSubject] || []).filter(q => q.type === 'choice' && progress.statuses[q.id] === STATUS.REVIEW).length;
       if (remainCount > 0) {
         if (confirm(`お疲れ様！\nまだ「あやしい」問題が ${remainCount} 問あります。続けて復習しますか？`)) {
-          progress.isReviewMode = true;
-          currentIndex = 0;
-          flushProgress();
+          // 'review' モードで再スタート
+          const radio = modeSelect.querySelector('input[name="mode"][value="review"]');
+          if (radio) radio.checked = true;
           startQuiz(currentSubject);
           return;
         }
@@ -628,7 +733,6 @@
     }
     if (typeof loadProgress !== 'function') {
       function loadProgress() {
-        // 科目ごとの保存キーで復元（存在しない場合は初期化）
         const key = 'progress_' + currentSubject;
         try {
           const saved = localStorage.getItem(key);
@@ -636,17 +740,19 @@
             const s = JSON.parse(saved);
             progress = {
               statuses: (s && s.statuses) || {},
-              isReviewMode: !!(s && s.isReviewMode),
               stats: (s && s.stats) || {}
             };
-            currentIndex = Number.isInteger(s && s.currentIndex) ? s.currentIndex : 0;
+            // currentIndex は number 型でなければ 0 にフォールバック
+            const savedIndex = (s && typeof s.currentIndex === 'number') ? s.currentIndex : 0;
+            progress.currentIndex = savedIndex;
+            currentIndex = savedIndex; // グローバル変数にも反映
           } else {
-            progress = { statuses: {}, isReviewMode: false, stats: {} };
+            progress = { statuses: {}, stats: {}, currentIndex: 0 };
             currentIndex = 0;
           }
         } catch (e) {
           console.warn('進捗の読み込みに失敗しました:', e);
-          progress = { statuses: {}, isReviewMode: false, stats: {} };
+          progress = { statuses: {}, stats: {}, currentIndex: 0 };
           currentIndex = 0;
         }
       }
@@ -655,11 +761,11 @@
       function flushProgress() {
         const key = 'progress_' + currentSubject;
         try {
+          // ★★★ 保存するstateにcurrentIndexを含める ★★★
           const state = {
             statuses: progress.statuses || {},
-            isReviewMode: !!progress.isReviewMode,
-            currentIndex: currentIndex,
-            stats: progress.stats || {}
+            stats: progress.stats || {},
+            currentIndex: progress.currentIndex
           };
           localStorage.setItem(key, JSON.stringify(state));
         } catch (e) {
@@ -672,9 +778,12 @@
     document.addEventListener('DOMContentLoaded', () => {
       showScreen('home');
       bindHomeButtons();
+      initializeModeSelector();
       if (backHomeBtn && !backHomeBtn.__bound) {
         backHomeBtn.addEventListener('click', (e) => {
           e.preventDefault();
+          // ★★★ HOMEに戻る前に現在位置を保存 ★★★
+          progress.currentIndex = currentIndex;
           flushProgress();
           showScreen('home');
         }, { passive: false });
