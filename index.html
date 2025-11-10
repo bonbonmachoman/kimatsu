@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <!-- ★★★ iPad最適化①：誤操作による拡大・縮小を禁止 ★★★ -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>期末試験・最終チェック</title>
+  <title>暗記・最終チェック</title>
 
   <!-- ★★★ iPad最適化②：SafariのUIを消すための呪文 ★★★ -->
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -123,18 +123,20 @@
     .nav-btn:active { opacity: .8; }
 
     /* --- モード選択ボタン --- */
-    #mode-btn-group { display: flex; justify-content: center; gap: .75rem; flex-wrap: wrap; }
+    #mode-btn-group { display: flex; justify-content: center; gap: .5rem; flex-wrap: nowrap; }
     .mode-btn {
       /* .nav-btn と共通のスタイルを継承しつつ調整 */
       border: 1px solid #1f2937;
       background: #fff;
       color: #1f2937;
-      font-size: .9rem;
+      font-size: .75rem;
       font-weight: 600;
       /* iPadでのタップ領域を確保 (padding-block + font-size + border) */
-      padding: .8rem 1rem;
+      padding: .7rem .7rem;
       min-height: 44px;
       box-sizing: border-box;
+      flex: 1;
+      white-space: nowrap;
     }
     .mode-btn:hover {
       background-color: #f3f4f6; /* 濃いグレーの100相当 */
@@ -162,7 +164,7 @@
 
     <!-- ===== HOME画面 ===== -->
     <div id="home-screen" class="screen" style="display:block;">
-      <h1 style="text-align: center; font-size: 2.5rem;">期末試験・最終チェック</h1>
+      <h1 style="text-align: center; font-size: 2rem;">期末試験・最終チェック</h1>
       <div id="mode-select" style="max-width:600px; margin: 1.5rem auto; text-align: center;">
         <strong style="display: block; font-size: 1rem; margin-bottom: 0.75rem;">出題モード:</strong>
         <div id="mode-btn-group" role="group" aria-label="出題モード選択">

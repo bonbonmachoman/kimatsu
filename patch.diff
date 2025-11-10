@@ -1,0 +1,91 @@
+--- a/index.html
++++ b/index.html
+ @@ -150,6 +150,10 @@
+           <label style="display:flex;align-items:center;gap:.35rem;">
+             <input type="radio" name="mode" value="review">
+             <span>復習（あやしいのみ）</span>
++          </label>
++          <label style="display:flex;align-items:center;gap:.35rem;">
++            <input type="radio" name="mode" value="review_unseen">
++            <span>復習＋未着手（続き）</span>
+           </label>
+         </div>
+       </div>
+ @@ -582,40 +586,47 @@
+ 
+     function startQuiz(subject) {
+       currentSubject = subject;
+       const startMode = getSelectedMode();
+       statsSubjectKey = 'progress_' + currentSubject;
+       loadProgress();
+-      
++
+       if (!progress || typeof progress !== 'object') progress = {};
+       if (!progress.statuses || typeof progress.statuses !== 'object') progress.statuses = {};
+       if (!progress.stats || typeof progress.stats !== 'object') progress.stats = {};
+ 
+-      const allQs = ALL_QUESTIONS[subject] || [];
+-      const reviewQuestions = allQs.filter(q => q.type === 'choice' && progress.statuses[q.id] === STATUS.REVIEW);
++      const allQs = (ALL_QUESTIONS[subject] || []).filter(q => q.type === 'choice');
++      let initialIndex = 0;
+ 
+       if (startMode === 'review') {
+-        progress.isReviewMode = true;
+-        currentQuestions = reviewQuestions.length > 0 ? reviewQuestions : [];
+-      } else {
+-        progress.isReviewMode = false;
++        currentQuestions = allQs.filter(q => progress.statuses[q.id] === STATUS.REVIEW);
++        if (currentQuestions.length === 0) {
++          alert('「あやしい」にチェックされた問題はありません。');
++          return;
++        }
++      } else if (startMode === 'review_unseen') {
++        const reviewQs = allQs.filter(q => progress.statuses[q.id] === STATUS.REVIEW);
++        const unseenQs = allQs.filter(q => !progress.stats.hasOwnProperty(q.id));
++        const combined = [...reviewQs];
++        const combinedIds = new Set(reviewQs.map(q => q.id));
++        unseenQs.forEach(q => {
++          if (!combinedIds.has(q.id)) { combined.push(q); }
++        });
++        currentQuestions = combined;
++        if (currentQuestions.length === 0) {
++          alert('復習・未着手の問題はありません。');
++          return;
++        }
++      } else { // 'all'
+         currentQuestions = allQs;
++        if (progress.currentIndex > 0 && progress.currentIndex < currentQuestions.length) {
++          if (confirm(`前回の続き(${progress.currentIndex + 1}問目)から再開しますか？`)) {
++            initialIndex = progress.currentIndex;
++          }
++        }
+       }
+ 
+-      // 非対応タイプ（並べ替えなど）は現行UIでは未対応のため除外
+-      currentQuestions = currentQuestions.filter(q => q.type === 'choice');
+-
+-      // 空の復習リストだった場合のフォールバック（全問に自動切替）
+-      if (progress.isReviewMode && currentQuestions.length === 0) {
+-        progress.isReviewMode = false;
+-        currentQuestions = allQs.filter(q => q.type === 'choice');
+-      }
+-
+-      // 新規開始時は常に先頭から（前回のcurrentIndexは使わない）
+-      currentIndex = 0;
+-      
++      currentIndex = initialIndex;
++      flushProgress(); // 開始時のcurrentIndexを保存
++
+       showScreen('quiz');
+       displayQuestion();
+     }
+ @@ -729,7 +740,9 @@
+         }
+       }
+       alert('全問終了！お疲れ様でした！');
++      currentIndex = 0; // 全問終了したら進捗をリセット
++      flushProgress();
+       showScreen('home');
+     }
+ 
+     // ===== 最小ヘルパー（未定義なら用意） =====
